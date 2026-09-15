@@ -1,0 +1,38 @@
+[project]
+name = "apply-pipeline"
+version = "0.1.0"
+description = "AI-powered job vacancy aggregation, filtering, and evaluation pipeline"
+readme = "README.md"
+authors = [
+    { name = "Andrew", email = "malyi.andrew@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "psycopg[binary]>=3.3.5",
+    "pydantic-settings>=2.15.0",
+    "redis>=8.1.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "ruff>=0.16.7",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+strict = true
+files = ["src", "scripts"]
