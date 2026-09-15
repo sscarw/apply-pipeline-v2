@@ -6,6 +6,7 @@ dist/
 wheels/
 .idea/
 .vscode/
+/.import_linter_cache
 *.egg-info
 
 # Virtual environments

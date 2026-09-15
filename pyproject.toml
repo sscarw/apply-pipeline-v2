@@ -19,6 +19,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "import-linter>=2.15",
     "mypy>=2.3.1",
     "pre-commit>=4.6.2",
     "pytest>=9.1.1",
@@ -35,4 +36,22 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 [tool.mypy]
 plugins = ["pydantic.mypy"]
 strict = true
-files = ["src", "scripts"]
+files = ["src", "scripts", "tests"]
+
+[tool.importlinter]
+root_package = "apply_pipeline"
+
+[[tool.importlinter.contracts]]
+name = "Layered architecture"
+type = "layers"
+containers = ["apply_pipeline"]
+layers = [
+    "entrypoints",
+    "services",
+    "adapters",
+    "domain",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
