@@ -8,9 +8,11 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.20.0",
     "psycopg[binary]>=3.3.5",
     "pydantic-settings>=2.15.0",
     "redis>=8.1.0",
+    "sqlalchemy[asyncio]>=2.0.54",
 ]
 
 [build-system]
@@ -36,7 +38,7 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 [tool.mypy]
 plugins = ["pydantic.mypy"]
 strict = true
-files = ["src", "scripts", "tests"]
+files = ["src", "scripts", "tests", "migrations"]
 
 [tool.importlinter]
 root_package = "apply_pipeline"
