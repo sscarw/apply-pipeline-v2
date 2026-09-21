@@ -11,10 +11,15 @@ class Settings(BaseSettings):
     database_url: PostgresDsn
     redis_url: RedisDsn
     openai_api_key: SecretStr | None = None
+    openai_model: str = "gpt-4.1-mini"
+    openai_fallback_model: str = "gpt-4o-mini"
+    anthropic_api_key: SecretStr | None = None
+    anthropic_model: str = "claude-haiku-4-5-20251001"
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
+        env_ignore_empty=True,
         extra="ignore",
     )
 
