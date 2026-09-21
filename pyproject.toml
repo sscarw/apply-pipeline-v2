@@ -25,7 +25,9 @@ dev = [
     "mypy>=2.3.1",
     "pre-commit>=4.6.2",
     "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
     "ruff>=0.16.7",
+    "testcontainers[postgres]>=4.15.0",
 ]
 
 [tool.ruff]
@@ -39,6 +41,10 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 plugins = ["pydantic.mypy"]
 strict = true
 files = ["src", "scripts", "tests", "migrations"]
+# Name modules by their path (tests.integration.conftest), so the two conftest.py
+# files do not clash; the package itself is found through src.
+mypy_path = "src"
+explicit_package_bases = true
 
 [tool.importlinter]
 root_package = "apply_pipeline"
@@ -54,6 +60,18 @@ layers = [
     "domain",
 ]
 
+[[tool.mypy.overrides]]
+# The docker SDK (pulled in by testcontainers) ships without type hints.
+module = ["docker", "docker.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
+asyncio_mode = "auto"
+# One event loop for the whole run: the database engine is created once per session.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+markers = [
+    "integration: runs against a real PostgreSQL started in Docker by testcontainers",
+]

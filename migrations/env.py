@@ -14,7 +14,8 @@ from apply_pipeline.config import get_settings
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Keep loggers that already exist (the app's, pytest's) when migrations run in-process.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # The URL comes from the app settings, never from alembic.ini, so the password stays
 # out of git. Alembic's config is a configparser, where "%" starts an interpolation.

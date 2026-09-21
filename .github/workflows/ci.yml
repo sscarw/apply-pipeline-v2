@@ -32,8 +32,12 @@ jobs:
       - name: Mypy
         run: uv run mypy
 
-      - name: Tests
-        run: uv run pytest
+      - name: Unit tests
+        run: uv run pytest -m "not integration"
+
+      # GitHub-hosted Ubuntu runners have Docker, which testcontainers uses for PostgreSQL.
+      - name: Integration tests
+        run: uv run pytest -m integration
 
       - name: Import Linter
         run: uv run lint-imports
