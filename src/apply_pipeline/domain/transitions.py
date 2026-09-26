@@ -9,7 +9,7 @@ class Source(StrEnum):
     DOU = "dou"
 
 
-class VacancyStatus(StrEnum):
+class MatchStatus(StrEnum):
     NEW = "new"
     FILTERED_OUT = "filtered_out"
     JUDGED = "judged"
@@ -21,60 +21,60 @@ class VacancyStatus(StrEnum):
     REJECTED = "rejected"
 
 
-ALLOWED_TRANSITIONS: Final[Mapping[VacancyStatus, frozenset[VacancyStatus]]] = MappingProxyType(
+ALLOWED_TRANSITIONS: Final[Mapping[MatchStatus, frozenset[MatchStatus]]] = MappingProxyType(
     {
-        VacancyStatus.NEW: frozenset(
+        MatchStatus.NEW: frozenset(
             {
-                VacancyStatus.FILTERED_OUT,
-                VacancyStatus.JUDGED,
+                MatchStatus.FILTERED_OUT,
+                MatchStatus.JUDGED,
             }
         ),
-        VacancyStatus.FILTERED_OUT: frozenset(
+        MatchStatus.FILTERED_OUT: frozenset(
             {
-                VacancyStatus.SHORTLISTED,
+                MatchStatus.SHORTLISTED,
             }
         ),
-        VacancyStatus.JUDGED: frozenset(
+        MatchStatus.JUDGED: frozenset(
             {
-                VacancyStatus.SHORTLISTED,
-                VacancyStatus.DISMISSED,
+                MatchStatus.SHORTLISTED,
+                MatchStatus.DISMISSED,
             }
         ),
-        VacancyStatus.SHORTLISTED: frozenset(
+        MatchStatus.SHORTLISTED: frozenset(
             {
-                VacancyStatus.APPLIED,
-                VacancyStatus.DISMISSED,
+                MatchStatus.APPLIED,
+                MatchStatus.DISMISSED,
             }
         ),
-        VacancyStatus.DISMISSED: frozenset(
+        MatchStatus.DISMISSED: frozenset(
             {
-                VacancyStatus.SHORTLISTED,
+                MatchStatus.SHORTLISTED,
             }
         ),
-        VacancyStatus.APPLIED: frozenset(
+        MatchStatus.APPLIED: frozenset(
             {
-                VacancyStatus.INTERVIEW,
-                VacancyStatus.REJECTED,
+                MatchStatus.INTERVIEW,
+                MatchStatus.REJECTED,
             }
         ),
-        VacancyStatus.INTERVIEW: frozenset(
+        MatchStatus.INTERVIEW: frozenset(
             {
-                VacancyStatus.OFFER,
-                VacancyStatus.REJECTED,
+                MatchStatus.OFFER,
+                MatchStatus.REJECTED,
             }
         ),
-        VacancyStatus.OFFER: frozenset(),
-        VacancyStatus.REJECTED: frozenset(),
+        MatchStatus.OFFER: frozenset(),
+        MatchStatus.REJECTED: frozenset(),
     }
 )
 
-TERMINAL_STATUSES: Final[frozenset[VacancyStatus]] = frozenset(
+TERMINAL_STATUSES: Final[frozenset[MatchStatus]] = frozenset(
     status for status, allowed in ALLOWED_TRANSITIONS.items() if not allowed
 )
 
 
 def can_transition(
-    from_status: VacancyStatus,
-    to_status: VacancyStatus,
+    from_status: MatchStatus,
+    to_status: MatchStatus,
 ) -> bool:
     return to_status in ALLOWED_TRANSITIONS[from_status]

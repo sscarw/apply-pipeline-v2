@@ -5,7 +5,7 @@ import pytest
 from apply_pipeline.adapters.db.errors import CorruptedRowError
 from apply_pipeline.adapters.db.mappers import row_to_vacancy, vacancy_to_row
 from apply_pipeline.domain.models import Vacancy
-from apply_pipeline.domain.transitions import Source, VacancyStatus
+from apply_pipeline.domain.transitions import Source
 
 PUBLISHED_AT = datetime(2026, 9, 1, 12, 0, tzinfo=UTC)
 
@@ -29,43 +29,15 @@ def _make_vacancy(
     )
 
 
-def test_round_trip_with_history() -> None:
-    vacancy = _make_vacancy()
-
-    vacancy.change_status(
-        VacancyStatus.JUDGED,
-        now=datetime(2026, 9, 2, 12, 0, tzinfo=UTC),
-        reason="Passed initial check",
-    )
-    vacancy.change_status(
-        VacancyStatus.SHORTLISTED,
-        now=datetime(2026, 9, 3, 12, 0, tzinfo=UTC),
-        reason="Good match",
-    )
-    vacancy.change_status(
-        VacancyStatus.APPLIED,
-        now=datetime(2026, 9, 4, 12, 0, tzinfo=UTC),
-        reason="Application sent",
-    )
-
-    row = vacancy_to_row(vacancy)
-    result = row_to_vacancy(row)
-
-    assert result == vacancy
-    assert row.status == "applied"
-    assert len(row.history) == 3
-
-
-def test_round_trip_without_history() -> None:
+def test_round_trip() -> None:
     vacancy = _make_vacancy()
 
     row = vacancy_to_row(vacancy)
     result = row_to_vacancy(row)
 
     assert result == vacancy
-    assert result.status == VacancyStatus.NEW
-    assert result.history == []
-    assert row.history == []
+    assert row.source == "djinni"
+    assert row.external_id == "847958"
 
 
 @pytest.mark.parametrize(
@@ -93,43 +65,6 @@ def test_optional_fields(
 
     assert result.location == location
     assert result.salary_text == salary_text
-
-
-def test_unknown_status_raises() -> None:
-    vacancy = _make_vacancy()
-
-    row = vacancy_to_row(vacancy)
-    row.status = "archived"
-
-    with pytest.raises(CorruptedRowError) as exc_info:
-        row_to_vacancy(row)
-
-    error = exc_info.value
-
-    assert error.field == "status"
-    assert error.value == "archived"
-
-
-def test_unknown_status_in_history_raises() -> None:
-    vacancy = _make_vacancy()
-
-    vacancy.change_status(
-        VacancyStatus.JUDGED,
-        now=datetime(2026, 9, 2, 12, 0, tzinfo=UTC),
-        reason="Passed initial check",
-    )
-
-    row = vacancy_to_row(vacancy)
-    row.history[0].to_status = "archived"
-
-    with pytest.raises(CorruptedRowError) as exc_info:
-        row_to_vacancy(row)
-
-    error = exc_info.value
-
-    assert error.table == "vacancy_status_changes"
-    assert error.field == "to_status"
-    assert error.value == "archived"
 
 
 def test_unknown_source_raises() -> None:

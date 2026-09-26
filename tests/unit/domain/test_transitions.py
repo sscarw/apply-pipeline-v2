@@ -3,53 +3,53 @@ import pytest
 from apply_pipeline.domain.transitions import (
     ALLOWED_TRANSITIONS,
     TERMINAL_STATUSES,
-    VacancyStatus,
+    MatchStatus,
     can_transition,
 )
 
 EXPECTED_TRANSITIONS = {
-    VacancyStatus.NEW: frozenset(
+    MatchStatus.NEW: frozenset(
         {
-            VacancyStatus.FILTERED_OUT,
-            VacancyStatus.JUDGED,
+            MatchStatus.FILTERED_OUT,
+            MatchStatus.JUDGED,
         }
     ),
-    VacancyStatus.FILTERED_OUT: frozenset(
+    MatchStatus.FILTERED_OUT: frozenset(
         {
-            VacancyStatus.SHORTLISTED,
+            MatchStatus.SHORTLISTED,
         }
     ),
-    VacancyStatus.JUDGED: frozenset(
+    MatchStatus.JUDGED: frozenset(
         {
-            VacancyStatus.SHORTLISTED,
-            VacancyStatus.DISMISSED,
+            MatchStatus.SHORTLISTED,
+            MatchStatus.DISMISSED,
         }
     ),
-    VacancyStatus.SHORTLISTED: frozenset(
+    MatchStatus.SHORTLISTED: frozenset(
         {
-            VacancyStatus.APPLIED,
-            VacancyStatus.DISMISSED,
+            MatchStatus.APPLIED,
+            MatchStatus.DISMISSED,
         }
     ),
-    VacancyStatus.DISMISSED: frozenset(
+    MatchStatus.DISMISSED: frozenset(
         {
-            VacancyStatus.SHORTLISTED,
+            MatchStatus.SHORTLISTED,
         }
     ),
-    VacancyStatus.APPLIED: frozenset(
+    MatchStatus.APPLIED: frozenset(
         {
-            VacancyStatus.INTERVIEW,
-            VacancyStatus.REJECTED,
+            MatchStatus.INTERVIEW,
+            MatchStatus.REJECTED,
         }
     ),
-    VacancyStatus.INTERVIEW: frozenset(
+    MatchStatus.INTERVIEW: frozenset(
         {
-            VacancyStatus.OFFER,
-            VacancyStatus.REJECTED,
+            MatchStatus.OFFER,
+            MatchStatus.REJECTED,
         }
     ),
-    VacancyStatus.OFFER: frozenset(),
-    VacancyStatus.REJECTED: frozenset(),
+    MatchStatus.OFFER: frozenset(),
+    MatchStatus.REJECTED: frozenset(),
 }
 
 ALLOWED_CASES = [
@@ -69,22 +69,22 @@ def test_transition_table_matches_business_rules() -> None:
     ids=lambda status: status.value,
 )
 def test_can_transition_allows_configured_transitions(
-    from_status: VacancyStatus,
-    to_status: VacancyStatus,
+    from_status: MatchStatus,
+    to_status: MatchStatus,
 ) -> None:
     assert can_transition(from_status, to_status)
 
 
 def test_every_status_exists_in_transition_table() -> None:
-    assert set(ALLOWED_TRANSITIONS) == set(VacancyStatus)
+    assert set(ALLOWED_TRANSITIONS) == set(MatchStatus)
 
 
 def test_terminal_statuses() -> None:
     assert (
         frozenset(
             {
-                VacancyStatus.OFFER,
-                VacancyStatus.REJECTED,
+                MatchStatus.OFFER,
+                MatchStatus.REJECTED,
             }
         )
         == TERMINAL_STATUSES

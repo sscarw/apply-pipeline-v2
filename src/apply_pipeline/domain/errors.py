@@ -1,4 +1,4 @@
-from apply_pipeline.domain.transitions import VacancyStatus
+from apply_pipeline.domain.transitions import MatchStatus
 
 
 class DomainError(Exception):
@@ -12,13 +12,41 @@ class InvalidVacancyError(DomainError):
         super().__init__(message)
 
 
+class InvalidProfileError(DomainError):
+    """Raised when candidate profile data or criteria are invalid."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
+class InvalidUserError(DomainError):
+    """Raised when user data is invalid."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
+class InvalidMatchError(DomainError):
+    """Raised when match data is invalid."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
+class ScoringError(DomainError):
+    """Raised when scoring cannot be calculated from the provided input."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
 class InvalidTransitionError(DomainError):
-    """Raised when a vacancy status transition is not allowed."""
+    """Raised when a match status transition is not allowed."""
 
     def __init__(
         self,
-        from_status: VacancyStatus,
-        to_status: VacancyStatus,
+        from_status: MatchStatus,
+        to_status: MatchStatus,
         message: str | None = None,
     ) -> None:
         if message is None:

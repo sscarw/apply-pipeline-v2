@@ -45,7 +45,11 @@ async def test_committed_rows_are_rolled_back_after_the_test(
         description="Row that must not outlive the test",
         published_at=datetime(2026, 9, 1, 12, 0, tzinfo=UTC),
     )
-    session.add(vacancy_to_row(vacancy))
+    row = vacancy_to_row(vacancy)
+    # The vacancies.status column is still NOT NULL; the Day 6 migration moves status
+    # to matches and drops it. Until then the test fills it in by hand.
+    row.status = "new"
+    session.add(row)
     await session.commit()
 
     in_session = await session.scalar(select(func.count()).select_from(VacancyRow))
