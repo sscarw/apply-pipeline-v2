@@ -7,6 +7,10 @@ from uuid import UUID
 from apply_pipeline.domain.errors import InvalidUserError
 
 
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
 class Language(StrEnum):
     UK = "uk"
     EN = "en"
@@ -22,7 +26,7 @@ class User:
     is_active: bool = True
 
     def __post_init__(self) -> None:
-        self.email = self.email.strip().lower()
+        self.email = normalize_email(self.email)
 
         if self.email.count("@") != 1:
             raise InvalidUserError("Email must contain exactly one '@'.")

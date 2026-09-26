@@ -41,9 +41,20 @@ def _make_match(
         ("", CREATED_AT),
         ("   ", CREATED_AT),
         ("djinni-847958", CREATED_AT),
+        ("linkedin:4362362525", CREATED_AT),
+        ("djinni:", CREATED_AT),
+        ("djinni:   ", CREATED_AT),
         ("djinni:847958", datetime(2026, 9, 1, 12, 0)),
     ],
-    ids=["empty-key", "whitespace-key", "key-without-colon", "naive-created-at"],
+    ids=[
+        "empty-key",
+        "whitespace-key",
+        "key-without-colon",
+        "unknown-source",
+        "empty-external-id",
+        "blank-external-id",
+        "naive-created-at",
+    ],
 )
 def test_invalid_match_raises_error(vacancy_key: str, created_at: datetime) -> None:
     with pytest.raises(InvalidMatchError):

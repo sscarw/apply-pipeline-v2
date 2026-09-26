@@ -1,10 +1,13 @@
+from uuid import UUID
+
+
 class CorruptedRowError(Exception):
     """Raised when a database value cannot be converted to the domain model."""
 
     def __init__(
         self,
         table: str,
-        row_id: int | None,
+        row_id: int | UUID | None,
         field: str,
         value: object,
     ) -> None:

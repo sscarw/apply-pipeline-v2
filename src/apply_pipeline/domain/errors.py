@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from apply_pipeline.domain.transitions import MatchStatus
 
 
@@ -55,3 +57,29 @@ class InvalidTransitionError(DomainError):
         super().__init__(message)
         self.from_status = from_status
         self.to_status = to_status
+
+
+class NotFoundError(DomainError):
+    """Raised when a requested domain entity is not found."""
+
+    def __init__(self, entity: str, key: str) -> None:
+        super().__init__(f'{entity} "{key}" not found')
+        self.entity = entity
+        self.key = key
+
+
+class DuplicateEmailError(DomainError):
+    """Raised when a user with the same email already exists."""
+
+    def __init__(self, email: str) -> None:
+        super().__init__(f'Email "{email}" is already in use')
+        self.email = email
+
+
+class ProfileVersionConflictError(DomainError):
+    """Raised when a candidate profile version already exists."""
+
+    def __init__(self, user_id: UUID, version: int) -> None:
+        super().__init__(f'Profile version {version} for user "{user_id}" already exists')
+        self.user_id = user_id
+        self.version = version

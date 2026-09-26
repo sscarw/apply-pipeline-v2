@@ -37,7 +37,28 @@ class Vacancy:
 
     @property
     def key(self) -> str:
-        return f"{self.source.value}:{self.external_id}"
+        return make_vacancy_key(self.source, self.external_id)
 
     def age_days(self, now: datetime) -> int:
         return (now - self.published_at).days
+
+
+def make_vacancy_key(source: Source, external_id: str) -> str:
+    return f"{source.value}:{external_id}"
+
+
+def split_vacancy_key(key: str) -> tuple[Source, str]:
+    source_value, separator, external_id = key.partition(":")
+
+    if not separator:
+        raise InvalidVacancyError("Vacancy key must contain ':'.")
+
+    if not external_id.strip():
+        raise InvalidVacancyError("Vacancy key must contain a non-empty external id.")
+
+    try:
+        source = Source(source_value)
+    except ValueError as error:
+        raise InvalidVacancyError(f"Unknown vacancy source: '{source_value}'.") from error
+
+    return source, external_id

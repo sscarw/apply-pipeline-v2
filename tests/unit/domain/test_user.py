@@ -5,7 +5,7 @@ from uuid import UUID
 import pytest
 
 from apply_pipeline.domain.errors import InvalidUserError
-from apply_pipeline.domain.user import Language, User
+from apply_pipeline.domain.user import Language, User, normalize_email
 
 USER_ID = UUID("00000000-0000-0000-0000-000000000001")
 CREATED_AT = datetime(2026, 9, 1, 12, 0, tzinfo=UTC)
@@ -96,3 +96,22 @@ def test_user_is_mutable_entity() -> None:
 
     assert user.language == Language.EN
     assert user.monthly_budget_usd == Decimal("2.50")
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("Andrii@Example.COM", "andrii@example.com"),
+        ("  andrii@example.com\n", "andrii@example.com"),
+        ("already@normal.ua", "already@normal.ua"),
+    ],
+    ids=["mixed-case", "surrounding-whitespace", "already-normal"],
+)
+def test_normalize_email(raw: str, expected: str) -> None:
+    assert normalize_email(raw) == expected
+
+
+def test_user_and_lookup_normalize_the_same_way() -> None:
+    raw = " Andrii@Example.com "
+
+    assert _make_user(email=raw).email == normalize_email(raw)

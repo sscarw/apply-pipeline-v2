@@ -2,7 +2,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
-from apply_pipeline.domain.errors import InvalidMatchError, InvalidTransitionError
+from apply_pipeline.domain.errors import (
+    InvalidMatchError,
+    InvalidTransitionError,
+    InvalidVacancyError,
+)
+from apply_pipeline.domain.models import split_vacancy_key
 from apply_pipeline.domain.scoring import MatchScore
 from apply_pipeline.domain.transitions import MatchStatus, can_transition
 
@@ -26,11 +31,10 @@ class Match:
     profile_version: int | None = None
 
     def __post_init__(self) -> None:
-        if not self.vacancy_key.strip():
-            raise InvalidMatchError("Vacancy key cannot be empty.")
-
-        if ":" not in self.vacancy_key:
-            raise InvalidMatchError("Vacancy key must contain ':'.")
+        try:
+            split_vacancy_key(self.vacancy_key)
+        except InvalidVacancyError as error:
+            raise InvalidMatchError(f"Invalid vacancy key: {self.vacancy_key!r}.") from error
 
         if self.created_at.tzinfo is None or self.created_at.utcoffset() is None:
             raise InvalidMatchError("created_at must be timezone-aware.")

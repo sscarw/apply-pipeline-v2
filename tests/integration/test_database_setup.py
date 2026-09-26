@@ -29,7 +29,14 @@ async def test_database_is_migrated_to_head(
         tables = await connection.run_sync(_table_names)
 
     assert current == expected_head
-    assert {"vacancies", "vacancy_status_changes"} <= set(tables)
+    assert {
+        "vacancies",
+        "users",
+        "candidate_profiles",
+        "matches",
+        "match_status_changes",
+    } <= set(tables)
+    assert "vacancy_status_changes" not in tables
 
 
 async def test_committed_rows_are_rolled_back_after_the_test(
@@ -45,11 +52,7 @@ async def test_committed_rows_are_rolled_back_after_the_test(
         description="Row that must not outlive the test",
         published_at=datetime(2026, 9, 1, 12, 0, tzinfo=UTC),
     )
-    row = vacancy_to_row(vacancy)
-    # The vacancies.status column is still NOT NULL; the Day 6 migration moves status
-    # to matches and drops it. Until then the test fills it in by hand.
-    row.status = "new"
-    session.add(row)
+    session.add(vacancy_to_row(vacancy))
     await session.commit()
 
     in_session = await session.scalar(select(func.count()).select_from(VacancyRow))
