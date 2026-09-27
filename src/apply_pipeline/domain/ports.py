@@ -1,3 +1,5 @@
+from datetime import datetime
+from decimal import Decimal
 from typing import Protocol
 from uuid import UUID
 
@@ -143,4 +145,50 @@ class MatchRepository(Protocol):
         limit: int,
     ) -> list[Match]:
         """Return matches for a user and status, with best scores first."""
+        ...
+
+
+class JudgeDecisionLog(Protocol):
+    """Keeps every judge call: model, prompt, profile version, tokens and money.
+
+    One decision is identified by the match, the profile version, the prompt
+    version and the hash of the vacancy text. The log never commits: the caller
+    controls the transaction.
+    """
+
+    async def record(
+        self,
+        match: Match,
+        verdict: JudgeVerdict,
+        *,
+        profile_version: int,
+        vacancy_hash: str,
+        decided_at: datetime,
+    ) -> None:
+        """Store a decision, including failed ones.
+
+        Raises NotFoundError if the match is not stored.
+        """
+        ...
+
+    async def was_attempted(
+        self,
+        match: Match,
+        *,
+        profile_version: int,
+        prompt_version: str,
+        vacancy_hash: str,
+    ) -> bool:
+        """Tell whether this exact decision was already paid for.
+
+        True for a successful decision and for an INVALID_OUTPUT failure.
+        UNAVAILABLE failures cost nothing, so they do not count and are retried.
+        """
+        ...
+
+    async def spent_since(self, user_id: UUID, *, since: datetime) -> Decimal:
+        """Return what the user's decisions cost from `since` on, inclusive.
+
+        Decisions whose price is unknown are not included.
+        """
         ...

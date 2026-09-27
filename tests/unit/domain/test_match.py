@@ -245,3 +245,40 @@ def test_score_with_naive_now_leaves_match_unchanged() -> None:
     assert match.status == MatchStatus.NEW
     assert match.score is None
     assert match.profile_version is None
+
+
+def test_scored_match_can_be_built_from_storage() -> None:
+    match = Match(
+        user_id=USER_ID,
+        vacancy_key="djinni:847958",
+        created_at=CREATED_AT,
+        status=MatchStatus.JUDGED,
+        score=PASSING_SCORE,
+        profile_version=2,
+    )
+
+    assert match.profile_version == 2
+
+
+@pytest.mark.parametrize(
+    ("score", "profile_version"),
+    [
+        (PASSING_SCORE, None),
+        (None, 2),
+        (PASSING_SCORE, 0),
+    ],
+    ids=["score-without-version", "version-without-score", "version-zero"],
+)
+def test_score_and_profile_version_go_together(
+    score: MatchScore | None,
+    profile_version: int | None,
+) -> None:
+    with pytest.raises(InvalidMatchError):
+        Match(
+            user_id=USER_ID,
+            vacancy_key="djinni:847958",
+            created_at=CREATED_AT,
+            status=MatchStatus.JUDGED,
+            score=score,
+            profile_version=profile_version,
+        )

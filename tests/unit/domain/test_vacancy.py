@@ -1,5 +1,8 @@
+import hashlib
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta, timezone
+from typing import Any
 
 import pytest
 
@@ -160,3 +163,71 @@ def test_split_unknown_source_keeps_cause() -> None:
         split_vacancy_key("linkedin:1")
 
     assert isinstance(exc_info.value.__cause__, ValueError)
+
+
+def test_content_hash_is_sha256_of_joined_fields() -> None:
+    vacancy = _make_vacancy()
+    expected_content = "\x1f".join(
+        ["Python Developer", "Acme", "", "", "Python backend vacancy"],
+    )
+
+    assert vacancy.content_hash == hashlib.sha256(expected_content.encode()).hexdigest()
+    assert len(vacancy.content_hash) == 64
+
+
+def test_content_hash_ignores_whitespace_changes() -> None:
+    original = _make_vacancy()
+    reformatted = replace(
+        original,
+        title="  Python   Developer ",
+        description="Python\n\nbackend\tvacancy\n",
+    )
+
+    assert reformatted.content_hash == original.content_hash
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"title": "Senior Python Developer"},
+        {"company": "Other"},
+        {"location": "Kyiv"},
+        {"salary_text": "$2000"},
+        {"description": "Java backend vacancy"},
+    ],
+    ids=["title", "company", "location", "salary", "description"],
+)
+def test_content_hash_changes_with_job_fields(change: dict[str, Any]) -> None:
+    original = _make_vacancy()
+
+    assert replace(original, **change).content_hash != original.content_hash
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"url": "https://example.com/jobs/other"},
+        {"external_id": "999"},
+        {"published_at": PUBLISHED_AT + timedelta(days=3)},
+    ],
+    ids=["url", "external-id", "republished"],
+)
+def test_content_hash_ignores_where_and_when(change: dict[str, Any]) -> None:
+    # A vacancy republished with the same text must not be paid for again.
+    original = _make_vacancy()
+
+    assert replace(original, **change).content_hash == original.content_hash
+
+
+def test_content_hash_keeps_field_borders() -> None:
+    first = replace(_make_vacancy(), title="Python Dev", company="eloper Acme")
+    second = replace(_make_vacancy(), title="Python Developer", company="Acme")
+
+    assert first.content_hash != second.content_hash
+
+
+def test_missing_and_empty_optional_fields_hash_the_same() -> None:
+    assert (
+        replace(_make_vacancy(), location=None).content_hash
+        == replace(_make_vacancy(), location="").content_hash
+    )

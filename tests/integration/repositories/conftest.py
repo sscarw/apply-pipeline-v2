@@ -3,6 +3,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from apply_pipeline.adapters.db.repositories.decisions import SqlAlchemyJudgeDecisionLog
 from apply_pipeline.adapters.db.repositories.matches import SqlAlchemyMatchRepository
 from apply_pipeline.adapters.db.repositories.profiles import SqlAlchemyProfileRepository
 from apply_pipeline.adapters.db.repositories.users import SqlAlchemyUserRepository
@@ -30,6 +31,11 @@ def profiles(session: AsyncSession) -> SqlAlchemyProfileRepository:
 @pytest.fixture
 def matches(session: AsyncSession) -> SqlAlchemyMatchRepository:
     return SqlAlchemyMatchRepository(session)
+
+
+@pytest.fixture
+def decisions(session: AsyncSession) -> SqlAlchemyJudgeDecisionLog:
+    return SqlAlchemyJudgeDecisionLog(session)
 
 
 @pytest.fixture

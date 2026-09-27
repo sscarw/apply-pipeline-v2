@@ -2,12 +2,14 @@
 
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apply_pipeline.domain.criteria import Criterion, Priority
+from apply_pipeline.domain.criteria import Criterion, CriterionResult, CriterionStatus, Priority
+from apply_pipeline.domain.judge import JudgeFailure, JudgeUsage, JudgeVerdict
 from apply_pipeline.domain.match import Match
 from apply_pipeline.domain.models import Vacancy
 from apply_pipeline.domain.profile import CandidateProfile, WorkFormat
@@ -73,3 +75,18 @@ async def reload(session: AsyncSession) -> None:
 
 
 AddVacancies = Callable[..., Awaitable[list[str]]]
+
+
+def make_verdict(
+    failure: JudgeFailure | None = None,
+    *,
+    cost: Decimal | None = Decimal("0.0017"),
+) -> JudgeVerdict:
+    """A verdict of the given kind; UNAVAILABLE never has usage, so no cost."""
+    usage = JudgeUsage("gpt-4.1-mini", 2300, 180, 1024, cost)
+    if failure is JudgeFailure.UNAVAILABLE:
+        return JudgeVerdict((), None, "judge_v2", None, failure, 0)
+    if failure is JudgeFailure.INVALID_OUTPUT:
+        return JudgeVerdict((), None, "judge_v2", usage, failure, 0)
+    results = (CriterionResult("python", CriterionStatus.MET, "Build LLM agents in Python."),)
+    return JudgeVerdict(results, "Python і LLM.", "judge_v2", usage, None, 0)
