@@ -42,6 +42,13 @@ class ScoringError(DomainError):
         super().__init__(message)
 
 
+class InvalidVerdictError(DomainError):
+    """Raised when judge verdict or usage data is invalid."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
 class InvalidTransitionError(DomainError):
     """Raised when a match status transition is not allowed."""
 

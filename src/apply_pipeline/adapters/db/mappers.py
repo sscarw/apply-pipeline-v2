@@ -198,22 +198,31 @@ def row_to_match(row: MatchRow) -> Match:
 
     score: MatchScore | None = None
 
-    if row.score_value is not None:
-        score_columns = {
-            "value": row.score_value,
-            "blocked_by": row.blocked_by,
-            "scored_count": row.scored_count,
-            "unknown_count": row.unknown_count,
-        }
+    # The score is one unit together with the profile version it was made for:
+    # either every column is empty (not scored yet) or every column is filled.
+    score_columns = {
+        "value": row.score_value,
+        "blocked_by": row.blocked_by,
+        "scored_count": row.scored_count,
+        "unknown_count": row.unknown_count,
+        "profile_version": row.profile_version,
+    }
+    filled = [value is not None for value in score_columns.values()]
 
-        if row.blocked_by is None or row.scored_count is None or row.unknown_count is None:
-            raise CorruptedRowError(
-                table="matches",
-                row_id=row.id,
-                field="score",
-                value=score_columns,
-            )
+    if any(filled) and not all(filled):
+        raise CorruptedRowError(
+            table="matches",
+            row_id=row.id,
+            field="score",
+            value=score_columns,
+        )
 
+    if (
+        row.score_value is not None
+        and row.blocked_by is not None
+        and row.scored_count is not None
+        and row.unknown_count is not None
+    ):
         try:
             score = MatchScore(
                 value=row.score_value,

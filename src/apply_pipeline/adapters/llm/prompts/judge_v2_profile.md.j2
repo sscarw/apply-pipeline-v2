@@ -1,0 +1,19 @@
+# Candidate profile
+
+- Desired roles: {{ roles | join(", ") }}
+- Commercial experience: {{ experience_years }} {{ "year" if experience_years == 1 else "years" }}
+- Skills: {{ skills | join(", ") if skills else "not specified" }}
+- Work formats: {{ work_formats | join(", ") }}{% if city %} (city: {{ city }}){% endif %}
+- Minimum salary: {{ salary if salary else "not specified" }}
+
+# Criteria
+
+Answer every criterion below. The id is in square brackets.
+
+{% for criterion in criteria %}
+{{ loop.index }}. [{{ criterion.id }}] {{ criterion.text }}
+{% endfor %}
+
+# Language
+
+Write the summary in {{ language_name }}.

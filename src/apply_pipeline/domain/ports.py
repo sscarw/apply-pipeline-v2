@@ -6,21 +6,35 @@ from apply_pipeline.domain.match import Match
 from apply_pipeline.domain.models import Vacancy
 from apply_pipeline.domain.profile import CandidateProfile
 from apply_pipeline.domain.transitions import MatchStatus
-from apply_pipeline.domain.user import User
+from apply_pipeline.domain.user import Language, User
 
 
 class VacancyJudge(Protocol):
-    """Decides whether a vacancy is worth applying to.
+    """Judges a vacancy against a candidate profile.
 
-    Services depend on this port rather than on LangGraph or a model provider,
-    so the LLM judge can be swapped for a fake in tests.
+    Services depend on this port rather than on a specific model provider,
+    so the judge can be replaced with a fake in tests.
+
+    If the model is unavailable, the judge does not raise because of that
+    failure and instead returns a verdict with fail_open=True.
     """
 
-    async def judge(self, vacancy: Vacancy) -> JudgeVerdict:
-        """Read the vacancy and return the verdict.
+    @property
+    def prompt_version(self) -> str:
+        """Return the prompt version used by this judge."""
+        ...
 
-        Never raises because a model is unavailable: in that case the verdict
-        lets the vacancy through with fail_open=True.
+    async def judge(
+        self,
+        vacancy: Vacancy,
+        profile: CandidateProfile,
+        *,
+        language: Language,
+    ) -> JudgeVerdict:
+        """Judge a vacancy against the profile and return a structured verdict.
+
+        If the model is unavailable, return a verdict with fail_open=True
+        instead of raising an availability error.
         """
         ...
 

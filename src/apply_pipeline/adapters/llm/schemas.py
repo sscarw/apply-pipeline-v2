@@ -1,16 +1,27 @@
 from pydantic import BaseModel, Field
 
+from apply_pipeline.domain.criteria import CriterionStatus
+from apply_pipeline.domain.profile import MAX_CRITERIA
 
-class JudgeOutput(BaseModel):
-    apply: bool = Field(description="Whether the candidate should apply for this vacancy")
 
-    reason: str = Field(
-        max_length=200,
-        description="One sentence in Ukrainian explaining why",
+class CriterionAnswer(BaseModel):
+    criterion_id: str = Field(description="Criterion ID from square brackets, exactly as written.")
+    status: CriterionStatus = Field(description="Criterion status.")
+    evidence: str | None = Field(
+        default=None,
+        max_length=400,
+        description=("Exact quote from the vacancy for MET and NOT_MET; null for UNKNOWN."),
     )
 
-    gaps: list[str] = Field(
-        default_factory=list,
-        max_length=4,
-        description="Skills required by the vacancy that the candidate does not have",
+
+class JudgeOutput(BaseModel):
+    answers: list[CriterionAnswer] = Field(
+        max_length=MAX_CRITERIA,
+        description="Answers for the criteria shown to the judge.",
+    )
+    summary: str = Field(
+        max_length=400,
+        description=(
+            "One or two sentences, up to 300 characters, in the language specified in the profile."
+        ),
     )

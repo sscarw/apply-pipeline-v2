@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.20.0",
+    "jinja2>=3.1.6",
     "langgraph>=1.2.11",
     "psycopg[binary]>=3.3.5",
     "pydantic-ai-slim[anthropic,openai]>=2.46.0",
@@ -44,8 +45,9 @@ plugins = ["pydantic.mypy"]
 strict = true
 files = ["src", "scripts", "tests", "migrations"]
 # Name modules by their path (tests.integration.conftest), so the two conftest.py
-# files do not clash; the package itself is found through src.
-mypy_path = "src"
+# files do not clash; the package itself is found through src, and scripts can import
+# each other (from my_profile import ...) the same way Python runs them.
+mypy_path = ["src", "scripts"]
 explicit_package_bases = true
 
 [tool.importlinter]

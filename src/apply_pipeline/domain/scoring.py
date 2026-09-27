@@ -42,6 +42,11 @@ class MatchScore:
     def is_blocked(self) -> bool:
         return bool(self.blocked_by)
 
+    @property
+    def is_low_confidence(self) -> bool:
+        # More than half of the scored criteria are unknown; integers, like the score.
+        return self.unknown_count * 2 > self.scored_count
+
 
 def score_match(
     criteria: Sequence[Criterion],

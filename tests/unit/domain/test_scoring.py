@@ -267,3 +267,30 @@ def test_invalid_match_score_raises(kwargs: dict[str, object]) -> None:
 @pytest.mark.parametrize("value", [0, 100])
 def test_match_score_bounds_are_inclusive(value: int) -> None:
     assert MatchScore(value=value, blocked_by=(), scored_count=1, unknown_count=0).value == value
+
+
+@pytest.mark.parametrize(
+    ("scored_count", "unknown_count", "expected"),
+    [(4, 1, False), (4, 2, False), (4, 3, True), (5, 3, True), (1, 1, True), (1, 0, False)],
+    ids=["quarter", "exactly-half", "three-quarters", "just-over-half", "all-unknown", "none"],
+)
+def test_low_confidence_starts_above_half(
+    scored_count: int,
+    unknown_count: int,
+    expected: bool,
+) -> None:
+    score = MatchScore(
+        value=50,
+        blocked_by=(),
+        scored_count=scored_count,
+        unknown_count=unknown_count,
+    )
+
+    assert score.is_low_confidence is expected
+
+
+def test_low_confidence_is_a_property_not_a_method() -> None:
+    # A method would be truthy without the call: `if score.is_low_confidence:` always passes.
+    score = MatchScore(value=90, blocked_by=(), scored_count=4, unknown_count=0)
+
+    assert score.is_low_confidence is False

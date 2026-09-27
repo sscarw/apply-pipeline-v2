@@ -219,9 +219,39 @@ def test_score_breaking_domain_rules_raises(score_value: int, blocked_by: list[s
         5,
         0,
     )
+    row.profile_version = 1
 
     with pytest.raises(CorruptedRowError) as exc_info:
         row_to_match(row)
 
     assert exc_info.value.field == "score"
     assert exc_info.value.value["value"] == score_value  # type: ignore[index]
+
+
+def test_profile_version_without_score_raises() -> None:
+    row = _new_row()
+    row.profile_version = 3
+
+    with pytest.raises(CorruptedRowError) as exc_info:
+        row_to_match(row)
+
+    assert exc_info.value.field == "score"
+
+
+def test_score_without_profile_version_raises() -> None:
+    row = _new_row()
+    row.status = "judged"
+    row.score_value, row.blocked_by, row.scored_count, row.unknown_count = 79, [], 5, 1
+
+    with pytest.raises(CorruptedRowError) as exc_info:
+        row_to_match(row)
+
+    assert exc_info.value.value["profile_version"] is None  # type: ignore[index]
+
+
+def test_leftover_blocked_by_without_score_raises() -> None:
+    row = _new_row()
+    row.blocked_by = ["python"]
+
+    with pytest.raises(CorruptedRowError):
+        row_to_match(row)

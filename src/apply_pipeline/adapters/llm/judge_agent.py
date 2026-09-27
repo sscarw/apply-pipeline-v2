@@ -1,13 +1,27 @@
-from pydantic_ai import Agent
+from dataclasses import dataclass
+
+from pydantic_ai import Agent, RunContext
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
 
-from apply_pipeline.adapters.llm.prompts import build_judge_instructions
+from apply_pipeline.adapters.llm.prompts import load_rules, render_profile
 from apply_pipeline.adapters.llm.schemas import JudgeOutput
 from apply_pipeline.domain.models import Vacancy
+from apply_pipeline.domain.profile import CandidateProfile
+from apply_pipeline.domain.user import Language
 
 
-def vacancy_to_prompt(vacancy: Vacancy, *, max_chars: int = 6000) -> str:
+@dataclass(frozen=True, slots=True)
+class JudgeDeps:
+    profile: CandidateProfile
+    language: Language
+
+
+def vacancy_to_prompt(
+    vacancy: Vacancy,
+    *,
+    max_chars: int = 6000,
+) -> str:
     location = vacancy.location or "not specified"
     salary = vacancy.salary_text or "not specified"
     published_at = vacancy.published_at.isoformat()
@@ -24,11 +38,27 @@ def vacancy_to_prompt(vacancy: Vacancy, *, max_chars: int = 6000) -> str:
     )
 
 
-def build_judge_agent(model: Model) -> Agent[None, JudgeOutput]:
-    return Agent(
+def build_judge_agent(
+    model: Model,
+) -> Agent[JudgeDeps, JudgeOutput]:
+    agent = Agent(
         model=model,
+        deps_type=JudgeDeps,
         output_type=JudgeOutput,
-        instructions=build_judge_instructions(),
-        model_settings=ModelSettings(temperature=0),
-        retries=2,
+        instructions=load_rules(),
+        model_settings=ModelSettings(
+            temperature=0,
+        ),
+        retries=1,
     )
+
+    @agent.instructions
+    def profile_instructions(
+        ctx: RunContext[JudgeDeps],
+    ) -> str:
+        return render_profile(
+            ctx.deps.profile,
+            ctx.deps.language,
+        )
+
+    return agent
