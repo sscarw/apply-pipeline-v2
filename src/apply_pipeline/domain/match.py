@@ -39,6 +39,12 @@ class Match:
         if self.created_at.tzinfo is None or self.created_at.utcoffset() is None:
             raise InvalidMatchError("created_at must be timezone-aware.")
 
+        if (self.score is None) != (self.profile_version is None):
+            raise InvalidMatchError("Score and profile version must be set together.")
+
+        if self.profile_version is not None and self.profile_version < 1:
+            raise InvalidMatchError("Profile version must be at least 1.")
+
     def change_status(
         self,
         new_status: MatchStatus,

@@ -1,9 +1,8 @@
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 
-from apply_pipeline.domain.errors import (
-    InvalidVacancyError,
-)
+from apply_pipeline.domain.errors import InvalidVacancyError
 from apply_pipeline.domain.transitions import Source
 
 
@@ -38,6 +37,22 @@ class Vacancy:
     @property
     def key(self) -> str:
         return make_vacancy_key(self.source, self.external_id)
+
+    @property
+    def content_hash(self) -> str:
+        fields = (
+            self.title,
+            self.company,
+            self.location or "",
+            self.salary_text or "",
+            self.description,
+        )
+
+        normalized_fields = (" ".join(value.split()) for value in fields)
+
+        content = "\x1f".join(normalized_fields)
+
+        return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
     def age_days(self, now: datetime) -> int:
         return (now - self.published_at).days

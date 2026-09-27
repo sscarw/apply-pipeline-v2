@@ -52,7 +52,12 @@ class SqlAlchemyMatchRepository:
         return result.scalar_one_or_none()
 
     async def add_if_absent(self, match: Match) -> bool:
-        if match.status != MatchStatus.NEW or match.history or match.score is not None:
+        if (
+            match.status != MatchStatus.NEW
+            or match.history
+            or match.score
+            or match.profile_version is not None
+        ):
             raise InvalidMatchError("Only a new match without history or score can be added.")
 
         vacancy_id = await self._vacancy_id(match.vacancy_key)
@@ -70,7 +75,6 @@ class SqlAlchemyMatchRepository:
                 vacancy_id=vacancy_id,
                 status=match.status.value,
                 created_at=match.created_at,
-                profile_version=match.profile_version,
             )
             .on_conflict_do_nothing(
                 index_elements=[

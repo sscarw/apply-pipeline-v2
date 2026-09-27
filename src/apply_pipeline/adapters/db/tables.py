@@ -18,6 +18,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -252,6 +253,109 @@ class MatchRow(Base):
             MatchStatusChangeRow.changed_at,
             MatchStatusChangeRow.id,
         ),
+    )
+
+
+class JudgeDecisionRow(Base):
+    __tablename__ = "judge_decisions"
+
+    __table_args__ = (
+        Index(
+            "ix_judge_decisions_attempt",
+            "match_id",
+            "profile_version",
+            "prompt_version",
+            "vacancy_hash",
+        ),
+        Index(
+            "uq_judge_decisions_success",
+            "match_id",
+            "profile_version",
+            "prompt_version",
+            "vacancy_hash",
+            unique=True,
+            postgresql_where=text("failure IS NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+    )
+
+    match_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey(
+            "matches.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    profile_version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    prompt_version: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+
+    vacancy_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    failure: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+
+    summary: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    results: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB,
+        nullable=False,
+    )
+
+    discarded: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    model_name: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+    )
+
+    input_tokens: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    output_tokens: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    cache_read_tokens: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    cost_usd: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 6),
+        nullable=True,
+    )
+
+    decided_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
     )
 
 

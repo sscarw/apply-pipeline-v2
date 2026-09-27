@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 from typing import Any, Final
 from uuid import UUID
@@ -7,12 +8,15 @@ from pydantic import TypeAdapter, ValidationError
 from apply_pipeline.adapters.db.errors import CorruptedRowError
 from apply_pipeline.adapters.db.tables import (
     CandidateProfileRow,
+    JudgeDecisionRow,
     MatchRow,
     MatchStatusChangeRow,
     UserRow,
     VacancyRow,
 )
+from apply_pipeline.domain.criteria import CriterionResult
 from apply_pipeline.domain.errors import InvalidProfileError, ScoringError
+from apply_pipeline.domain.judge import JudgeVerdict
 from apply_pipeline.domain.match import Match, StatusChange
 from apply_pipeline.domain.models import Vacancy, make_vacancy_key
 from apply_pipeline.domain.profile import CandidateProfile
@@ -21,6 +25,10 @@ from apply_pipeline.domain.transitions import MatchStatus, Source
 from apply_pipeline.domain.user import Language, User
 
 PROFILE_ADAPTER: Final[TypeAdapter[CandidateProfile]] = TypeAdapter(CandidateProfile)
+
+RESULTS_ADAPTER: Final[TypeAdapter[tuple[CriterionResult, ...]]] = TypeAdapter(
+    tuple[CriterionResult, ...]
+)
 
 PROFILE_STORAGE_FIELDS: Final[set[str]] = {
     "user_id",
@@ -152,6 +160,53 @@ def row_to_profile(
         ) from error
 
 
+def verdict_to_decision_row(
+    verdict: JudgeVerdict,
+    *,
+    match_id: int,
+    profile_version: int,
+    vacancy_hash: str,
+    decided_at: datetime,
+) -> JudgeDecisionRow:
+    results = RESULTS_ADAPTER.dump_python(
+        verdict.results,
+        mode="json",
+    )
+
+    usage = verdict.usage
+
+    return JudgeDecisionRow(
+        match_id=match_id,
+        profile_version=profile_version,
+        prompt_version=verdict.prompt_version,
+        vacancy_hash=vacancy_hash,
+        failure=(verdict.failure.value if verdict.failure is not None else None),
+        summary=verdict.summary,
+        results=results,
+        discarded=verdict.discarded,
+        model_name=(usage.model_name if usage is not None else None),
+        input_tokens=(usage.input_tokens if usage is not None else None),
+        output_tokens=(usage.output_tokens if usage is not None else None),
+        cache_read_tokens=(usage.cache_read_tokens if usage is not None else None),
+        cost_usd=(usage.cost_usd if usage is not None else None),
+        decided_at=decided_at,
+    )
+
+
+def decision_row_to_results(
+    row: JudgeDecisionRow,
+) -> tuple[CriterionResult, ...]:
+    try:
+        return RESULTS_ADAPTER.validate_python(row.results)
+    except (ValidationError, ScoringError) as error:
+        raise CorruptedRowError(
+            table="judge_decisions",
+            row_id=row.id,
+            field="results",
+            value=row.results,
+        ) from error
+
+
 def row_to_match(row: MatchRow) -> Match:
     vacancy_source = _parse_enum(
         Source,
@@ -198,8 +253,6 @@ def row_to_match(row: MatchRow) -> Match:
 
     score: MatchScore | None = None
 
-    # The score is one unit together with the profile version it was made for:
-    # either every column is empty (not scored yet) or every column is filled.
     score_columns = {
         "value": row.score_value,
         "blocked_by": row.blocked_by,
@@ -207,6 +260,7 @@ def row_to_match(row: MatchRow) -> Match:
         "unknown_count": row.unknown_count,
         "profile_version": row.profile_version,
     }
+
     filled = [value is not None for value in score_columns.values()]
 
     if any(filled) and not all(filled):
